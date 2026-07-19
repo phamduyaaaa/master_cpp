@@ -1,5 +1,5 @@
 /**
- * @file 07_camera_pipeline_queue.cpp
+ * @file 07_single_thread_pipeline.cpp
  * @brief Practice building a simple camera pipeline using a bounded frame queue.
  *
  * Description:
