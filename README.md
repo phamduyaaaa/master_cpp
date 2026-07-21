@@ -653,3 +653,31 @@ Thay vì phải học một khái niệm hoàn toàn mới.
 
 
 </details>
+
+
+| Thành phần | Khai báo | Mục đích | Ví dụ ngắn | Ghi chú |
+|------------|----------|----------|------------|----------|
+| **`std::mutex`** | `std::mutex m;` | Khóa bảo vệ dữ liệu dùng chung | `m.lock(); ... m.unlock();` | Không nên gọi `lock()/unlock()` thủ công nếu có thể dùng RAII. |
+| **`lock()`** | `m.lock();` | Chiếm mutex | `m.lock(); counter++; m.unlock();` | Nếu mutex đang bị giữ, thread sẽ block. |
+| **`unlock()`** | `m.unlock();` | Nhả mutex | `m.unlock();` | Chỉ thread đang giữ mutex mới được unlock. |
+| **`try_lock()`** | `m.try_lock();` | Thử lock nhưng không chờ | `if (m.try_lock()) { ... m.unlock(); }` | Trả về `true/false`. Không block. |
+| **`std::lock_guard`** | `std::lock_guard<std::mutex> lock(m);` | RAII lock đơn giản | `{ std::lock_guard lock(m); data++; }` | Khuyến nghị dùng mặc định. Tự unlock khi ra khỏi scope. |
+| **`std::unique_lock`** | `std::unique_lock<std::mutex> lock(m);` | RAII lock linh hoạt | `lock.unlock(); lock.lock();` | Dùng khi cần unlock giữa chừng hoặc với `condition_variable`. |
+| **`defer_lock`** | `std::unique_lock lock(m, std::defer_lock);` | Chưa lock ngay | `lock.lock();` | Hữu ích khi lock nhiều mutex cùng lúc. |
+| **`adopt_lock`** | `std::lock(m1, m2); std::lock_guard g1(m1, std::adopt_lock);` | Nhận quyền sở hữu mutex đã lock | Sau `std::lock()` | Dùng sai dễ gây lỗi. |
+| **`try_to_lock`** | `std::unique_lock lock(m, std::try_to_lock);` | Thử lock khi khởi tạo | `if (lock.owns_lock()) ...` | Không block. |
+| **`owns_lock()`** | `lock.owns_lock();` | Kiểm tra có đang giữ mutex không | `if (lock.owns_lock())` | Chỉ có ở `unique_lock`. |
+| **`release()`** | `lock.release();` | Trả con trỏ mutex nhưng **không unlock** | Hiếm dùng | Dành cho các tình huống đặc biệt. |
+| **`std::scoped_lock`** | `std::scoped_lock lock(m1, m2);` | Lock nhiều mutex an toàn | `std::scoped_lock l(m1, m2);` | Tránh deadlock. C++17+. |
+| **`std::lock()`** | `std::lock(m1, m2);` | Lock nhiều mutex không deadlock | `std::lock(m1, m2);` | Thường đi kèm `adopt_lock`. |
+| **`std::recursive_mutex`** | `std::recursive_mutex m;` | Một thread có thể lock nhiều lần | `m.lock(); m.lock();` | Ít khuyến nghị. Thường nên thiết kế lại. |
+| **`std::timed_mutex`** | `std::timed_mutex m;` | Mutex có timeout | `m.try_lock_for(1s);` | Hữu ích khi không muốn chờ vô hạn. |
+| **`std::recursive_timed_mutex`** | `std::recursive_timed_mutex m;` | Recursive + timeout | `m.try_lock_until(tp);` | Ít gặp. |
+| **`std::condition_variable`** | `std::condition_variable cv;` | Đánh thức thread đang chờ | `cv.notify_one();` | Chỉ dùng với `std::unique_lock<std::mutex>`. |
+| **`wait()`** | `cv.wait(lock);` | Chờ tín hiệu | `cv.wait(lock);` | Thread sẽ ngủ đến khi được đánh thức. |
+| **`wait(pred)`** | `cv.wait(lock, [] { return ready; });` | Chờ đến khi điều kiện đúng | `cv.wait(lock, [] { return ready; });` | Khuyến nghị dùng. Tránh *spurious wakeup*. |
+| **`wait_for()`** | `cv.wait_for(lock, 100ms);` | Chờ tối đa một khoảng thời gian | `cv.wait_for(lock, 100ms);` | Timeout tương đối. |
+| **`wait_until()`** | `cv.wait_until(lock, tp);` | Chờ đến một thời điểm | `cv.wait_until(lock, tp);` | Timeout tuyệt đối. |
+| **`notify_one()`** | `cv.notify_one();` | Đánh thức một thread | `cv.notify_one();` | Thread nào được đánh thức do hệ điều hành quyết định. |
+| **`notify_all()`** | `cv.notify_all();` | Đánh thức tất cả thread | `cv.notify_all();` | Dùng khi nhiều thread cùng chờ. |
+| **`std::condition_variable_any`** | `std::condition_variable_any cv;` | Hoạt động với nhiều loại lock | Hiếm dùng | Linh hoạt hơn nhưng thường chậm hơn `condition_variable`. |
