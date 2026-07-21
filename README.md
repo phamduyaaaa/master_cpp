@@ -1,13 +1,32 @@
 # master_cpp
 C++ 17/20 | Concurrency | Parallel | Multithreading
 
+Project
+```
+[Camera 1] --capture thread--> [Bounded Queue 1] --\
+[Camera 2] --capture thread--> [Bounded Queue 2] ----> [Thread Pool: N workers]
+[Camera N] --capture thread--> [Bounded Queue N] --/         |
+                                                                v
+                                          [Latest Frame Slots (double-buffered)]
+                                                    |                    |
+                                          [Display Thread]      [Motion Detected?]
+                                                                         |
+                                                              [Priority Log Queue]
+                                                                         |
+                                                              [Logging Thread → Disk]
+```
+
+*"Designed and implemented a multi-threaded C++ video processing pipeline handling N concurrent camera streams with custom thread-safe bounded queues, thread pool architecture, and priority-based event logging. Achieved Xx FPS improvement over single-threaded baseline while maintaining zero dropped frames under load; validated concurrency safety using ThreadSanitizer."*
+
+
 <details>
 <summary><strong>Mini Project: Frame Station</strong></summary>
 
 ## Giới thiệu
 
 Mục tiêu của mini-project này là xây dựng một **pipeline xử lý ảnh đơn luồng (single-thread)** để hiểu rõ luồng dữ liệu trước khi học `std::thread`, `std::mutex` và `std::condition_variable`.
-
+<details>
+<summary><strong>Pipeline</strong></summary>
 Pipeline sẽ mô phỏng:
 
 ```text
@@ -39,6 +58,7 @@ processing_worker()
 chỉ khác là mọi thứ đều chạy trên **một thread**, chưa có đồng bộ.
 
 ---
+</details>
 
 # 📚 Danh sách bài tập
 
