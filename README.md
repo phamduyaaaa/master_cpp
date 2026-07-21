@@ -701,3 +701,14 @@ Thay vì phải học một khái niệm hoàn toàn mới.
 | **`notify_one()`** | `cv.notify_one();` | Đánh thức một thread | `cv.notify_one();` | Thread nào được đánh thức do hệ điều hành quyết định. |
 | **`notify_all()`** | `cv.notify_all();` | Đánh thức tất cả thread | `cv.notify_all();` | Dùng khi nhiều thread cùng chờ. |
 | **`std::condition_variable_any`** | `std::condition_variable_any cv;` | Hoạt động với nhiều loại lock | Hiếm dùng | Linh hoạt hơn nhưng thường chậm hơn `condition_variable`. |
+| `std::condition_variable` | `std::condition_variable cv;` | Điều phối cơ chế "Ngủ/Thức" giữa các thread | `cv.wait(lock);` | Luôn phải dùng cùng `std::unique_lock`. |
+| `.wait()` | `cv.wait(lock, predicate);` | Tự động nhả mutex và đưa thread vào trạng thái chờ | `cv.wait(lock, [] { return !q.empty(); });` | Luôn dùng predicate (lambda) để chống **Spurious Wakeup** (thread tự thức dậy không có lý do). |
+| `.notify_one()` | `cv.notify_one();` | Đánh thức **1** thread đang chờ | `cv.notify_one();` | Thường gọi sau khi thêm một task vào queue. |
+| `.notify_all()` | `cv.notify_all();` | Đánh thức **tất cả** thread đang chờ | `cv.notify_all();` | Thường dùng khi shutdown Thread Pool để mọi worker thức dậy và thoát. |
+| `std::function` | `std::function<void()> task;` | Wrapper chứa mọi callable (function, lambda, functor...) | `task = [] { std::cout << "A"; };` | Hàm `submit()` của Thread Pool thường nhận kiểu này. |
+| **Lambda Capture `[=]`** | `[=]() { ... }` | Copy toàn bộ biến bên ngoài vào lambda | `auto t = [frame] { process(frame); };` | An toàn hơn `[&]` khi task chạy ở thread khác vì dữ liệu được sao chép. |
+| **Lambda Capture `[&]`** | `[&]() { ... }` | Capture theo tham chiếu | `auto t = [&count] { count++; };` | Nguy hiểm trong Thread Pool nếu biến gốc bị hủy trước khi task thực thi. |
+| `std::future` | `std::future<int> fut;` | Nhận kết quả trả về trong tương lai | `int result = fut.get();` | `get()` sẽ block nếu kết quả chưa sẵn sàng. |
+| `std::promise` | `std::promise<int> prom;` | Đẩy giá trị hoặc exception sang `future` | `prom.set_value(42);` | Luôn đi theo cặp với `std::future`. |
+| `std::packaged_task` | `std::packaged_task<int()> task(func);` | Bọc một callable và tự tạo `future` | `auto fut = task.get_future();` | Thường được dùng trong phần cài đặt `submit()` của Thread Pool. |
+| `std::thread::hardware_concurrency()` | `auto n = std::thread::hardware_concurrency();` | Lấy số luồng phần cứng (logical cores) của CPU | `ThreadPool pool(n);` | Số worker trong Thread Pool thường không nên vượt quá giá trị này đối với CPU-bound workloads. |
